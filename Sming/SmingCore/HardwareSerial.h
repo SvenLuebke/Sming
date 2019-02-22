@@ -3,6 +3,9 @@
  * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * HardwareSerial.h
+ *
  ****/
 
 /**	@defgroup serial Hardware serial
@@ -10,11 +13,11 @@
  *  @{
  */
 
-#ifndef _HARDWARESERIAL_H_
-#define _HARDWARESERIAL_H_
+#ifndef _SMING_CORE_HARDWARE_SERIAL_H_
+#define _SMING_CORE_HARDWARE_SERIAL_H_
 
 #include "WiringFrameworkDependencies.h"
-#include "Stream.h"
+#include "Data/Stream/ReadWriteStream.h"
 #include "Delegate.h"
 #include "espinc/uart.h"
 
@@ -88,7 +91,7 @@ enum SerialMode { SERIAL_FULL = UART_FULL, SERIAL_RX_ONLY = UART_RX_ONLY, SERIAL
 #endif
 
 /// Hardware serial class
-class HardwareSerial : public Stream
+class HardwareSerial : public ReadWriteStream
 {
 public:
 	/** @brief  Create instance of a hardware serial port object
@@ -218,7 +221,7 @@ public:
 	/** @brief  Get quantity characters available from serial input
      *  @retval int Quantity of characters in receive buffer
      */
-	virtual int available()
+	int available() override
 	{
 		return (int)uart_rx_available(uart);
 	}
@@ -227,7 +230,7 @@ public:
      *  @retval int Character read from serial port or -1 if buffer empty
      *  @note   The character is removed from the serial port input buffer
     */
-	virtual int read()
+	int read() override
 	{
 		return uart_read_char(uart);
 	}
@@ -239,16 +242,26 @@ public:
 	 *  @note Although this shares the same name as the method in IDataSourceStream,
 	 *  behaviour is different because in effect the 'seek' position is changed by this call.
 	 */
-	virtual uint16_t readMemoryBlock(char* buf, size_t max_len)
+	uint16_t readMemoryBlock(char* buf, int max_len) override
 	{
 		return uart_read(uart, buf, max_len);
+	}
+
+	bool seek(int len) override
+	{
+		return false;
+	}
+
+	bool isFinished() override
+	{
+		return false;
 	}
 
 	/** @brief  Read a character from serial port without removing from input buffer
      *  @retval int Character read from serial port or -1 if buffer empty
      *  @note   The character remains in serial port input buffer
      */
-	virtual int peek()
+	int peek() override
 	{
 		return uart_peek_char(uart);
 	}
@@ -271,21 +284,12 @@ public:
 
 	using Stream::write;
 
-	/** @brief  write a character to serial port
-	 *  @param  oneChar Character to write to the serial port
-	 *  @retval size_t Quantity of characters written (always 1)
-	 */
-	virtual size_t write(uint8_t oneChar)
-	{
-		return uart_write_char(uart, oneChar);
-	}
-
 	/** @brief  write multiple characters to serial port
 	 *  @param buffer data to write
 	 *  @param size number of characters to write
 	 *  @retval size_t Quantity of characters written, may be less than size
 	 */
-	virtual size_t write(const uint8_t* buffer, size_t size)
+	size_t write(const uint8_t* buffer, size_t size) override
 	{
 		return uart_write(uart, buffer, size);
 	}
@@ -392,7 +396,7 @@ public:
 	 * @param char c - character to search for
 	 * @retval int -1 if not found 0 or positive number otherwise
 	 */
-	virtual int indexOf(char c)
+	int indexOf(char c) override
 	{
 		return uart_rx_find(uart, c);
 	}
@@ -419,10 +423,11 @@ private:
 	size_t rxSize = DEFAULT_RX_BUFFER_SIZE;
 
 	/**
-	 * @brief  Interrupt handler for UART0 receive events
+	 * @brief Serial interrupt handler, called by serial driver
 	 * @param uart_t* pointer to UART object
 	 * @param status UART status flags indicating cause(s) of interrupt
 	 */
+	static void IRAM_ATTR staticCallbackHandler(uart_t* uart, uint32_t status);
 	void IRAM_ATTR callbackHandler(uint32_t status);
 
 	/**
@@ -444,4 +449,4 @@ private:
 extern HardwareSerial Serial;
 
 /** @} */
-#endif /* _HARDWARESERIAL_H_ */
+#endif /* _SMING_CORE_HARDWARE_SERIAL_H_ */

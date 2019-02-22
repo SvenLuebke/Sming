@@ -1,5 +1,5 @@
 #include <user_config.h>
-#include <SmingCore/SmingCore.h>
+#include <SmingCore.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
@@ -85,7 +85,8 @@ void startMqttClient()
 #include <ssl/private_key.h>
 #include <ssl/cert.h>
 
-	mqtt.setSslKeyCert(default_private_key, default_private_key_len, default_certificate, default_certificate_len, NULL,
+	mqtt.setSslKeyCert(default_private_key, default_private_key_len, default_certificate, default_certificate_len,
+					   nullptr,
 					   /*freeAfterHandshake*/ false);
 
 #endif

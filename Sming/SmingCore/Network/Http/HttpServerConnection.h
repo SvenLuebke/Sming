@@ -4,14 +4,14 @@
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
  *
- * HttpServerConnection
+ * HttpServerConnection.h
  *
  * Modified: 2017 - Slavey Karadzhov <slav@attachix.com>
  *
  ****/
 
-#ifndef _SMING_CORE_NETWORK_HTTP_HTTPSERVERCONNECTION_H_
-#define _SMING_CORE_NETWORK_HTTP_HTTPSERVERCONNECTION_H_
+#ifndef _SMING_CORE_NETWORK_HTTP_HTTP_SERVER_CONNECTION_H_
+#define _SMING_CORE_NETWORK_HTTP_HTTP_SERVER_CONNECTION_H_
 
 #include "HttpConnectionBase.h"
 #include "HttpResource.h"
@@ -42,13 +42,32 @@ typedef std::function<bool()> HttpServerProtocolUpgradeCallback;
 class HttpServerConnection : public HttpConnectionBase
 {
 public:
-	HttpServerConnection(tcp_pcb* clientTcp);
-	virtual ~HttpServerConnection();
+	HttpServerConnection(tcp_pcb* clientTcp) : HttpConnectionBase(clientTcp, HTTP_REQUEST)
+	{
+	}
 
-	void setResourceTree(ResourceTree* resourceTree);
-	void setBodyParsers(BodyParsers* bodyParsers);
+	~HttpServerConnection()
+	{
+		if(this->resource != nullptr) {
+			this->resource->shutdown(*this);
+		}
+	}
 
-	void send();
+	void setResourceTree(ResourceTree* resourceTree)
+	{
+		this->resourceTree = resourceTree;
+	}
+
+	void setBodyParsers(BodyParsers* bodyParsers)
+	{
+		this->bodyParsers = bodyParsers;
+	}
+
+	void send()
+	{
+		state = eHCS_StartSending;
+		onReadyToSendData(eTCE_Received);
+	}
 
 	using TcpClient::send;
 
@@ -64,21 +83,21 @@ protected:
 	 * @paran http_parser* parser
 	 * @return 0 on success, non-0 on error
 	 */
-	virtual int onMessageBegin(http_parser* parser);
+	int onMessageBegin(http_parser* parser) override;
 
 	/**
 	 * Called when the URL path is known
 	 * @param String path
 	 * @return 0 on success, non-0 on error
 	 */
-	virtual int onPath(const URL& path);
+	int onPath(const URL& path) override;
 
 	/**
 	 * Called when all headers are received
 	 * @param HttpHeaders headers - the processed headers
 	 * @return 0 on success, non-0 on error
 	 */
-	virtual int onHeadersComplete(const HttpHeaders& headers);
+	int onHeadersComplete(const HttpHeaders& headers) override;
 
 	/**
 	 * Called when a piece of body data is received
@@ -86,21 +105,28 @@ protected:
 	 * @paran size_t length
 	 * @return 0 on success, non-0 on error
 	 */
-	virtual int onBody(const char* at, size_t length);
+	int onBody(const char* at, size_t length) override;
 
 	/**
 	 * Called when the incoming data is complete
 	 * @paran http_parser* parser
 	 * @return 0 on success, non-0 on error
 	 */
-	virtual int onMessageComplete(http_parser* parser);
+	int onMessageComplete(http_parser* parser) override;
 
-	virtual bool onProtocolUpgrade(http_parser* parser);
+	bool onProtocolUpgrade(http_parser* parser) override
+	{
+		if(upgradeCallback) {
+			return upgradeCallback();
+		}
 
-	virtual void onHttpError(http_errno error);
+		return true;
+	}
+
+	void onHttpError(http_errno error) override;
 
 	// TCP methods
-	virtual void onReadyToSendData(TcpConnectionEvent sourceEvent);
+	void onReadyToSendData(TcpConnectionEvent sourceEvent) override;
 	virtual void sendError(const String& message = nullptr, enum http_status code = HTTP_STATUS_BAD_REQUEST);
 
 private:
@@ -108,7 +134,7 @@ private:
 	bool sendResponseBody(HttpResponse* response);
 
 public:
-	void* userData = nullptr; // << use to pass user data between requests
+	void* userData = nullptr; ///< use to pass user data between requests
 
 private:
 	ResourceTree* resourceTree = nullptr;
@@ -117,14 +143,14 @@ private:
 	HttpRequest request = HttpRequest(URL());
 	HttpResponse response;
 
-	HttpResourceDelegate headersCompleteDelegate = 0;
-	HttpResourceDelegate requestCompletedDelegate = 0;
-	HttpServerConnectionBodyDelegate onBodyDelegate = 0;
+	HttpResourceDelegate headersCompleteDelegate = nullptr;
+	HttpResourceDelegate requestCompletedDelegate = nullptr;
+	HttpServerConnectionBodyDelegate onBodyDelegate = nullptr;
 	HttpServerProtocolUpgradeCallback upgradeCallback = nullptr;
 
 	BodyParsers* bodyParsers = nullptr;
-	HttpBodyParserDelegate bodyParser = 0;
+	HttpBodyParserDelegate bodyParser = nullptr;
 };
 
 /** @} */
-#endif /* _SMING_CORE_NETWORK_HTTP_HTTPSERVERCONNECTION_H_ */
+#endif /* _SMING_CORE_NETWORK_HTTP_HTTP_SERVER_CONNECTION_H_ */

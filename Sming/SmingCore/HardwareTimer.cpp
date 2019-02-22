@@ -1,10 +1,13 @@
-/*
- * HWTimer.cpp
- *
+/****
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
- * Created 23.11.2015 by johndoe
+ * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * HWTimer.cpp
+ *
+ * Created 23.11.2015 by johndoe
+ *
  ****/
 
 #include "HardwareTimer.h"
@@ -101,12 +104,13 @@ HardwareTimer& HardwareTimer::initializeUs(uint32_t microseconds, InterruptCallb
 	return *this;
 }
 
-bool HardwareTimer::start(bool repeating /* = true*/)
+bool HardwareTimer::start(bool repeating)
 {
 	this->repeating = repeating;
 	stop();
-	if(interval == 0 || !callback)
+	if(interval == 0 || !callback) {
 		return started;
+	}
 
 	RTC_REG_WRITE(FRC1_CTRL_ADDRESS, DIVDED_BY_16 | FRC1_ENABLE_TIMER | TM_EDGE_INT | (repeating ? FRC1_AUTO_LOAD : 0));
 
@@ -138,8 +142,9 @@ bool HardwareTimer::setIntervalUs(uint32_t microseconds)
 {
 	if(microseconds < MAX_HW_TIMER_INTERVAL_US && microseconds > MIN_HW_TIMER_INTERVAL_US) {
 		interval = microseconds;
-		if(started)
+		if(started) {
 			restart();
+		}
 	} else {
 		stop();
 	}
@@ -152,6 +157,7 @@ void HardwareTimer::setCallback(InterruptCallback interrupt)
 	callback = interrupt;
 	ETS_INTR_UNLOCK();
 
-	if(!interrupt)
+	if(!interrupt) {
 		stop();
+	}
 }

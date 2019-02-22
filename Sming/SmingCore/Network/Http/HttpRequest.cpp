@@ -2,12 +2,12 @@
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
  * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
+ * All files of the Sming Core are provided under the LGPL v3 license.
  *
- * HttpRequest
+ * HttpRequest.cpp
  *
  * @author: 2017 - Slavey Karadzhov <slav@attachix.com>
  *
- * All files of the Sming Core are provided under the LGPL v3 license.
  ****/
 
 #include "HttpRequest.h"
@@ -28,7 +28,7 @@ HttpRequest::HttpRequest(const HttpRequest& value) : uri(value.uri)
 
 #ifdef ENABLE_SSL
 	sslOptions = value.sslOptions;
-	sslFingerprint = value.sslFingerprint;
+	sslFingerprints = value.sslFingerprints;
 	sslKeyCertPair = value.sslKeyCertPair;
 #endif
 }
@@ -96,7 +96,7 @@ String HttpRequest::getBody()
 	return ret;
 }
 
-ReadWriteStream* HttpRequest::getBodyStream()
+IDataSourceStream* HttpRequest::getBodyStream()
 {
 	return bodyStream;
 }
@@ -124,7 +124,7 @@ HttpRequest* HttpRequest::setBody(uint8_t* rawData, size_t length)
 	return setBody(memory);
 }
 
-HttpRequest* HttpRequest::setBody(ReadWriteStream* stream)
+HttpRequest* HttpRequest::setBody(IDataSourceStream* stream)
 {
 	if(bodyStream != nullptr) {
 		debug_e("HttpRequest::setBody: Discarding already set stream!");
@@ -163,11 +163,11 @@ String HttpRequest::toString()
 #ifdef ENABLE_SSL
 	content += F("> SSL options: ") + String(sslOptions) + '\n';
 	content +=
-		F("> SSL Cert Fingerprint Length: ") + String((sslFingerprint.certSha1 == nullptr) ? 0 : SHA1_SIZE) + '\n';
+		F("> SSL Cert Fingerprint Length: ") + String((sslFingerprints.certSha1 == nullptr) ? 0 : SHA1_SIZE) + '\n';
 	content +=
-		F("> SSL PK Fingerprint Length: ") + String((sslFingerprint.pkSha256 == nullptr) ? 0 : SHA256_SIZE) + '\n';
-	content += F("> SSL ClientCert Length: ") + String(sslKeyCertPair.certificateLength) + '\n';
-	content += F("> SSL ClientCert PK Length: ") + String(sslKeyCertPair.keyLength) + '\n';
+		F("> SSL PK Fingerprint Length: ") + String((sslFingerprints.pkSha256 == nullptr) ? 0 : SHA256_SIZE) + '\n';
+	content += F("> SSL ClientCert Length: ") + String(sslKeyCertPair.getCertificateLength()) + '\n';
+	content += F("> SSL ClientCert PK Length: ") + String(sslKeyCertPair.getKeyLength()) + '\n';
 	content += '\n';
 #endif
 

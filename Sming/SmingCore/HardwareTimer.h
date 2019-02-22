@@ -1,10 +1,13 @@
-/*
- * HWTimer.h
- *
+/****
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
- * Created 23.11.2015 by johndoe
+ * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * HardwareTimer.h
+ *
+ * Created 23.11.2015 by johndoe
+ *
  ****/
 
 /**	@defgroup hwtimer Hardware timer
@@ -38,7 +41,7 @@ public:
 	/** @brief  Hardware timer
     */
 	HardwareTimer();
-	virtual ~HardwareTimer();
+	~HardwareTimer();
 
 	/** @brief  Initialise hardware timer
      *  @param  microseconds Timer interval in microseconds
@@ -66,7 +69,7 @@ public:
 	 *  @retval bool True if timer started
 	 *  @note   Timer starts and will run for configured period then stop
 	 */
-	bool __forceinline IRAM_ATTR startOnce()
+	__forceinline bool IRAM_ATTR startOnce()
 	{
 		return start(false);
 	}
@@ -126,9 +129,9 @@ public:
 	/** @brief  Call timer callback
      *  @note   Calls the timer callback function
      */
-	void __forceinline IRAM_ATTR call()
+	__forceinline void IRAM_ATTR call()
 	{
-		if(callback) {
+		if(callback != nullptr) {
 			callback();
 		}
 	}

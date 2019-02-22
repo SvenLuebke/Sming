@@ -1,5 +1,11 @@
-/*
- * File: HardwarePWM.cpp
+/****
+ * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
+ * Created 2015 by Skurydin Alexey
+ * http://github.com/anakod/Sming
+ * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * HardwarePWM.cpp
+ *
  * Original Author: https://github.com/hrsavla
  *
  * This HardwarePWM library enables Sming framework user to use ESP SDK PWM API
@@ -14,18 +20,18 @@
  *
  * See also ESP8266 Technical Reference, Chapter 12:
  * http://espressif.com/sites/default/files/documentation/esp8266-technical_reference_en.pdf
+ *
  */
 
 #include "Clock.h"
-#include "../Wiring/WiringFrameworkIncludes.h"
+#include "WiringFrameworkIncludes.h"
 
 #include "HardwarePWM.h"
 
 #define PERIOD_TO_MAX_DUTY(x) (x * 25)
 
-HardwarePWM::HardwarePWM(uint8* pins, uint8 no_of_pins)
+HardwarePWM::HardwarePWM(uint8* pins, uint8 no_of_pins) : channel_count(no_of_pins)
 {
-	channel_count = no_of_pins;
 	if(no_of_pins > 0) {
 		uint32 io_info[PWM_CHANNEL_NUM_MAX][3];	// pin information
 		uint32 pwm_duty_init[PWM_CHANNEL_NUM_MAX]; // pwm duty
@@ -38,7 +44,7 @@ HardwarePWM::HardwarePWM(uint8* pins, uint8 no_of_pins)
 		}
 		const int initial_period = 1000;
 		pwm_init(initial_period, pwm_duty_init, no_of_pins, io_info);
-		pwm_start();
+		update();
 		maxduty = PERIOD_TO_MAX_DUTY(initial_period); // for period of 1000
 	}
 }
@@ -64,56 +70,40 @@ uint8 HardwarePWM::getChannel(uint8 pin)
 	return PWM_BAD_CHANNEL;
 }
 
-/* Function Name: analogWrite
- * Description: This function is used to set the pwm duty cycle for a given pin
- * Parameters: pin - Esp8266 pin number
- *             duty - duty cycle value
- * Default frequency is 1khz but can be varied by various function
+/* Function Name: getDutyChan
+ * Description: This function is used to get the duty cycle number for a given channel
+ * Parameters: chan -Esp8266 channel number
  */
-bool HardwarePWM::analogWrite(uint8 pin, uint32 duty)
+uint32 HardwarePWM::getDutyChan(uint8 chan)
 {
-	return setDuty(pin, duty);
-}
-
-/* Function Name: getDuty
- * Description: This function is used to get the duty cycle number for a given pin
- * Parameters: pin -Esp8266 pin number
- */
-uint32 HardwarePWM::getDuty(uint8 pin)
-{
-	uint8 chan = getChannel(pin);
-	if(chan == PWM_BAD_CHANNEL)
+	if(chan == PWM_BAD_CHANNEL) {
 		return 0;
-	else
+	} else {
 		return pwm_get_duty(chan);
+	}
 }
 
-/* Function Name: setDuty
- * Description: This function is used to set the pwm duty cycle for a given pin
- * Parameters: pin - pin number
+/* Function Name: setDutyChan
+ * Description: This function is used to set the pwm duty cycle for a given channel. If parameter 'update' is false
+ *              then you have to call update() later to update duties.
+ * Parameters: chan - channel number
  *             duty - duty cycle value
+ *             update - update PWM output
  */
-bool HardwarePWM::setDuty(uint8 pin, uint32 duty)
+bool HardwarePWM::setDutyChan(uint8 chan, uint32 duty, bool update)
 {
-	uint8 chan = getChannel(pin);
 	if(chan == PWM_BAD_CHANNEL) {
 		return false;
 	} else if(duty <= maxduty) {
 		pwm_set_duty(duty, chan);
-		pwm_start();
+		if(update) {
+			this->update();
+		}
 		return true;
 	} else {
 		debugf("Duty cycle value too high for current period.");
 		return false;
 	}
-}
-
-/* Function Name: getMaxDuty
- * Description: This function is used to get the max duty cycle for the currently set period
- */
-uint32 HardwarePWM::getMaxDuty()
-{
-	return maxduty;
 }
 
 /* Function Name: getPeriod
@@ -134,5 +124,13 @@ void HardwarePWM::setPeriod(uint32 period)
 {
 	maxduty = PERIOD_TO_MAX_DUTY(period);
 	pwm_set_period(period);
+	update();
+}
+
+/* Function Name: update
+ * Description: This function is used to actually update the PWM.
+ */
+void HardwarePWM::update()
+{
 	pwm_start();
 }

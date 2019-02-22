@@ -4,6 +4,8 @@
  * http://github.com/SmingHub/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
  *
+ * CircularBuffer.cpp
+ *
  * Initial code done by Ivan Grokhotkov as part of the esp8266 core for Arduino environment.
  * https://github.com/esp8266/Arduino/blob/master/cores/esp8266/cbuf.h
  *
@@ -16,7 +18,7 @@
 uint16_t CircularBuffer::readMemoryBlock(char* data, int bufSize)
 {
 	size_t bytesAvailable = available();
-	size_t sizeToRead = (bufSize < bytesAvailable) ? bufSize : bytesAvailable;
+	size_t sizeToRead = (size_t(bufSize) < bytesAvailable) ? bufSize : bytesAvailable;
 	size_t sizeRead = sizeToRead;
 	char* start = readPos;
 	if(writePos < readPos && sizeToRead > (size_t)((buffer + size) - readPos)) {

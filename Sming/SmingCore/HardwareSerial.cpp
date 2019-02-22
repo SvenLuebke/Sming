@@ -3,9 +3,12 @@
  * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * HardwareSerial.cpp
+ *
+ * HardwareSerial based on Espressif Systems' code
+ *
  ****/
-
-// HardwareSerial based on Espressif Systems code
 
 #include "HardwareSerial.h"
 #include <cstdarg>
@@ -156,6 +159,14 @@ void HardwareSerial::callbackHandler(uint32_t status)
 	}
 }
 
+void HardwareSerial::staticCallbackHandler(uart_t* uart, uint32_t status)
+{
+	auto serial = reinterpret_cast<HardwareSerial*>(uart_get_callback_param(uart));
+	if(serial) {
+		serial->callbackHandler(status);
+	}
+}
+
 bool HardwareSerial::updateUartCallback()
 {
 	if(uart == nullptr) {
@@ -167,14 +178,7 @@ bool HardwareSerial::updateUartCallback()
 #else
 	if(HWSDelegate || transmitComplete) {
 #endif
-		setUartCallback(
-			[](uart_t* uart, uint32_t status) {
-				auto serial = reinterpret_cast<HardwareSerial*>(uart_get_callback_param(uart));
-				if(serial) {
-					serial->callbackHandler(status);
-				}
-			},
-			this);
+		setUartCallback(staticCallbackHandler, this);
 		return true;
 	} else {
 		setUartCallback(nullptr, nullptr);

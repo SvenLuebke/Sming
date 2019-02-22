@@ -2,12 +2,12 @@
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
  * Created 2015 by Skurydin Alexey
  * http://github.com/anakod/Sming
+ * All files of the Sming Core are provided under the LGPL v3 license.
  *
- * HttpConnection
+ * HttpConnection.cpp
  *
  * @author: 2017 - Slavey Karadzhov <slav@attachix.com>
  *
- * All files of the Sming Core are provided under the LGPL v3 license.
  ****/
 
 #include "HttpConnection.h"
@@ -23,12 +23,7 @@
 #include "lwip/tcp_impl.h"
 #endif
 
-HttpConnection::HttpConnection(RequestQueue* queue) : HttpConnectionBase(HTTP_RESPONSE)
-{
-	this->waitingQueue = queue;
-}
-
-bool HttpConnection::connect(const String& host, int port, bool useSsl /* = false */, uint32_t sslOptions /* = 0 */)
+bool HttpConnection::connect(const String& host, int port, bool useSsl, uint32_t sslOptions)
 {
 	debug_d("HttpConnection::connect: TCP state: %d, isStarted: %d, isActive: %d", (tcp != nullptr ? tcp->state : -1),
 			(int)(getConnectionState() != eTCS_Ready), (int)isActive());
@@ -50,11 +45,6 @@ bool HttpConnection::connect(const String& host, int port, bool useSsl /* = fals
 	return TcpClient::connect(host, port, useSsl, sslOptions);
 }
 
-bool HttpConnection::send(HttpRequest* request)
-{
-	return waitingQueue->enqueue(request);
-}
-
 bool HttpConnection::isActive()
 {
 	if(tcp == nullptr) {
@@ -69,12 +59,6 @@ bool HttpConnection::isActive()
 	}
 
 	return false;
-}
-
-// @deprecated
-HttpHeaders& HttpConnection::getResponseHeaders()
-{
-	return response.headers;
 }
 
 String HttpConnection::getResponseHeader(String headerName, String defaultValue)
@@ -104,13 +88,6 @@ DateTime HttpConnection::getServerDate()
 	else
 		return DateTime();
 }
-
-String HttpConnection::getResponseString()
-{
-	return response.getBody();
-}
-
-// @enddeprecated
 
 void HttpConnection::reset()
 {
@@ -243,10 +220,10 @@ int HttpConnection::onHeadersComplete(const HttpHeaders& headers)
 	if(!error) {
 		// set the response stream
 		if(incomingRequest->responseStream != nullptr) {
-			response.stream = incomingRequest->responseStream;
+			response.setBuffer(incomingRequest->responseStream);
 			incomingRequest->responseStream = nullptr; // the response object will release that stream
 		} else {
-			response.stream = new LimitedMemoryStream(NETWORK_SEND_BUFFER_SIZE);
+			response.setBuffer(new LimitedMemoryStream(NETWORK_SEND_BUFFER_SIZE));
 		}
 	}
 
@@ -264,12 +241,11 @@ int HttpConnection::onBody(const char* at, size_t length)
 		return incomingRequest->requestBodyDelegate(*this, at, length);
 	}
 
-	if(response.stream != nullptr) {
-		int res = response.stream->write((const uint8_t*)at, length);
+	if(response.buffer != nullptr) {
+		auto res = response.buffer->write((const uint8_t*)at, length);
 		if(res != length) {
 			// unable to write the requested bytes - stop here...
-			delete response.stream;
-			response.stream = nullptr;
+			response.freeStreams();
 			return 1;
 		}
 	}
@@ -423,16 +399,6 @@ bool HttpConnection::sendRequestBody(HttpRequest* request)
 	return true;
 }
 
-HttpRequest* HttpConnection::getRequest()
-{
-	return incomingRequest;
-}
-
-HttpResponse* HttpConnection::getResponse()
-{
-	return &response;
-}
-
 // end of public methods for HttpConnection
 
 void HttpConnection::cleanup()
@@ -443,9 +409,4 @@ void HttpConnection::cleanup()
 	for(unsigned i = 0; i < executionQueue.count(); i++) {
 		waitingQueue->enqueue(executionQueue.dequeue());
 	}
-}
-
-HttpConnection::~HttpConnection()
-{
-	cleanup();
 }

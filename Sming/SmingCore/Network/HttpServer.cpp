@@ -4,7 +4,7 @@
  * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
  *
- * HttpServer
+ * HttpServer.cpp
  *
  * Modified: 2017 - Slavey Karadzhov <slav@attachix.com>
  *
@@ -13,23 +13,12 @@
 #include "HttpServer.h"
 
 #include "TcpClient.h"
-#include "../Wiring/WString.h"
-
-HttpServer::HttpServer()
-{
-	settings.keepAliveSeconds = 2;
-	configure(settings);
-}
-
-HttpServer::HttpServer(const HttpServerSettings& settings)
-{
-	configure(settings);
-}
+#include "WString.h"
 
 void HttpServer::configure(const HttpServerSettings& settings)
 {
 	this->settings = settings;
-	if(settings.minHeapSize != -1 && settings.minHeapSize > -1) {
+	if(settings.minHeapSize > -1) {
 		minHeapSize = settings.minHeapSize;
 	}
 
@@ -46,9 +35,7 @@ void HttpServer::configure(const HttpServerSettings& settings)
 HttpServer::~HttpServer()
 {
 	for(unsigned i = 0; i < resourceTree.count(); i++) {
-		if(resourceTree.valueAt(i) != NULL) {
-			delete resourceTree.valueAt(i);
-		}
+		delete resourceTree.valueAt(i);
 	}
 }
 

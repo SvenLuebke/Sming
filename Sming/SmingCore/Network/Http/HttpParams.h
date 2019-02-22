@@ -4,6 +4,8 @@
  * http://github.com/SmingHub/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
  *
+ * HttpParams.h
+ *
  * @author: 2018 - Mikee47 <mike@sillyhouse.net>
  *
  * 	Class to manage HTTP URI query parameters
@@ -14,8 +16,8 @@
  *
  ****/
 
-#ifndef _SMINGCORE_HTTP_HTTP_PARAMS_H_
-#define _SMINGCORE_HTTP_HTTP_PARAMS_H_
+#ifndef _SMING_CORE_NETWORK_HTTP_HTTP_PARAMS_H_
+#define _SMING_CORE_NETWORK_HTTP_HTTP_PARAMS_H_
 
 #include "WString.h"
 #include "WHashMap.h"
@@ -30,12 +32,8 @@
 class HttpParams : public HashMap<String, String>, public Printable
 {
 public:
-	virtual ~HttpParams()
-	{
-	}
-
 	// Printable
-	virtual size_t printTo(Print& p) const;
+	size_t printTo(Print& p) const override;
 };
 
-#endif // _SMINGCORE_HTTP_HTTP_PARAMS_H_
+#endif /* _SMING_CORE_NETWORK_HTTP_HTTP_PARAMS_H_ */

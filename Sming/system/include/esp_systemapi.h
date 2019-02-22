@@ -1,7 +1,17 @@
-// Based on mziwisky espmissingincludes.h && ESP8266_IoT_SDK_Programming Guide_v0.9.1.pdf && ESP SDK defines
+/****
+ * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
+ * Created 2015 by Skurydin Alexey
+ * http://github.com/SmingHub/Sming
+ * All files of the Sming Core are provided under the LGPL v3 license.
+ *
+ * esp_systemapi.h
+ *
+ * Based on mziwisky espmissingincludes.h && ESP8266_IoT_SDK_Programming Guide_v0.9.1.pdf && ESP SDK defines
+ *
+ ****/
 
-#ifndef __ESP_SYSTEM_API_H__
-#define __ESP_SYSTEM_API_H__
+#ifndef _SYSTEM_INCLUDE_ESP_SYSTEMAPI_H_
+#define _SYSTEM_INCLUDE_ESP_SYSTEMAPI_H_
 
 #include <ets_sys.h>
 #include <osapi.h>
@@ -26,6 +36,16 @@
 #define __forceinline __attribute__((always_inline)) inline
 #define STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
 #define STORE_ATTR __attribute__((aligned(4)))
+
+/*
+ * Use this definition in the cases where a function or a variable is meant to be possibly unused. GCC will not produce a warning for it.
+ */
+#define SMING_UNUSED  __attribute__((unused))
+
+/*
+ * Flags a compiler warning when Sming framework methods, functions or types are changed
+ */
+#define SMING_DEPRECATED __attribute__((deprecated))
 
 #ifdef ENABLE_GDB
 	#define GDB_IRAM_ATTR IRAM_ATTR
@@ -117,4 +137,4 @@ extern void ets_isr_unmask(unsigned intr);
 
 typedef signed short file_t;
 
-#endif
+#endif /* _SYSTEM_INCLUDE_ESP_SYSTEMAPI_H_ */
